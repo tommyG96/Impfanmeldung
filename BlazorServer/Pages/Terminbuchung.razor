@@ -1,0 +1,174 @@
+﻿@page "/terminbuchung"
+
+@using DataLibrary
+@using Microsoft.AspNetCore.WebUtilities
+@using BlazorServer.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration _config
+@inject NavigationManager UriHelper
+@inject IDataAccess _data
+
+
+<h3>Terminbuchung</h3>
+
+
+@if (impfen == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <br />
+    <br />
+
+    <table>
+        <tr>
+            <th>Personen ID</th>
+            <th>Name</th>
+            <th>Geburtsdatum</th>
+            <th>Sozialversicherungsnummer</th>
+            @*<th>Terminbuchung</th>*@
+        </tr>
+        <tr>
+            <td>
+                @impfen.per_Id
+            </td>
+            <td>
+                @impfen.Name
+            </td>
+            <td>
+                @impfen.per_GebDat.ToString("dd.MM.yyyy")
+            </td>
+            <td>
+                @impfen.per_svnr
+            </td>
+            @*<td>
+
+                    <a class="btn btn-dark" href="@("/details?PersonenID=" + i.per_Id.ToString())">Zum Impftermin</a>
+
+                </td>*@
+        </tr>
+    </table>
+
+    <br>
+    <br>
+
+    // bind und value --> Onchange + value
+
+        <h5>Geben Sie hier Ihren gewünschten Impftermin ein:</h5>
+        <input @onchange="@(( args ) => Adrauswahl.imp_Termin = Convert.ToDateTime(args.Value))" type="datetime-local" id="Impftermin" name="Impftermin" value="@Impftermin.ToString("yyyy-MM-ddTHH:mm")">
+        <br>
+        <br>
+        <h5>Wählen Sie hier die gewünschte Impfstrasse aus:</h5>
+        @foreach (var i in adresse)
+        {
+            <label for="@i.adr_Id"><input @onchange="@((args) => Adrauswahl.adr_Id = Int32.Parse(args.Value.ToString()))" id="@i.adr_Id" value="@i.adr_Id" type="radio" name="Adresse">@i.Adresse</label>
+            <br>
+        }
+        <button class="btn btn-warning" @onclick="@(async () => await InsertData(impfen.per_Id, Adrauswahl.adr_Id, Adrauswahl.imp_Termin))">Speichern</button>
+
+    if (Datumrichtig == false)
+    {
+        <h7>Dieser Termin ist leider nicht Möglich</h7>
+    }
+}
+
+@code {
+
+    ImpfModel impfen;
+    ImpfModel Adrauswahl = new ImpfModel();
+    List<ImpfAdressModel> adresse;
+
+    private string Vorname;
+    private string Nachname;
+    private DateTime Geburtsdatum;
+    private string Sozialversicherungsnummer;
+    private DateTime Impftermin = DateTime.Now;
+    private DateTime _heute = DateTime.Now;
+
+    private bool Datumrichtig = true;
+
+    private string queryID;
+
+
+
+    private async Task SearchData(string ID)
+    {
+        string sql = "select per_Id, concat_ws(' ', per_Vname, per_Nname) as Name, per_GebDat, per_svnr from person where per_Id=@per_Id;";
+
+        impfen = await _data.LoadSingleRow<ImpfModel, dynamic>(sql, new { per_Id = ID }, _config.GetConnectionString("default"));
+    }
+
+    private async Task InsertData(int per_Id, int Adresse, DateTime Impftermin)
+    {
+        if (Impftermin.Year == 1)
+        {
+            Impftermin = _heute;
+        }
+
+        if (_heute.CompareTo(Impftermin) > 0)
+        {
+            Datumrichtig = false;
+            return;
+        }
+        else
+        {
+            Datumrichtig = true;
+        }
+
+        string sql = "insert into impfstrasse (per_Id, adr_Id, imp_Termin) values (@per_id, @adr_Id, @imp_Termin);";
+
+        await _data.SaveData(sql, new { per_Id = per_Id, adr_Id = Adresse, imp_Termin = Impftermin }, _config.GetConnectionString("default"));
+
+    }
+
+
+    //private async Task LoadAllData()
+    //{
+    //    string sql = "select per_Id, concat_ws(' ', per_Vname, per_Nname) as Name, per_GebDat, per_svnr from person";
+
+    //    impfen = await _data.LoadSingleRow<ImpfModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    //}
+
+    private async Task LoadAdressData()
+    {
+        string sql = "select adr_Id, concat_ws(', ', adr_Strasse, adr_PLZ, adr_Ort) as Adresse from adresse";
+
+        adresse = await _data.LoadData<ImpfAdressModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = UriHelper.ToAbsoluteUri(UriHelper.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("PersonenID", out var param))
+        {
+            queryID = param.First();
+        }
+
+        if (queryID != null)
+        {
+            await SearchData(queryID);
+        }
+        Adrauswahl = impfen;
+        await LoadAdressData();
+    }
+}

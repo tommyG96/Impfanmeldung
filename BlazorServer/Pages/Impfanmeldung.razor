@@ -1,0 +1,108 @@
+﻿@page "/impfanmeldung"
+
+@using DataLibrary
+@using Microsoft.AspNetCore.WebUtilities
+@using BlazorServer.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration _config
+@inject NavigationManager UriHelper
+@inject IDataAccess _data
+
+
+<h3>Impfanmeldung</h3>
+
+
+@if (impfen == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <br />
+    <br />
+    <form>
+        <label for="Vorname">Vorname: </label>
+        <input @bind="Vorname" type="text" id="Vorname" name="Vorname" pattern="[a-zA-ZäÄöÖüÜß][a-zA-ZäÄöÖüÜß\s]*" title="Bitte Vornamen eingeben" required>
+        <br>
+        <label for="Nachname">Nachname: </label>
+        <input @bind="Nachname" type="text" id="Nachname" name="Nachname" pattern="[a-zA-ZäÄöÖüÜß][a-zA-ZäÄöÖüÜß\s]*" title="Bitte Nachnamen eingeben" required>
+        <br>
+        <label for="Geburtsdatum">Geburtsdatum: </label>
+        <input @bind="Geburtsdatum" type="date" id="Geburtsdatum" name="Geburtsdatum" required>
+        <br>
+        <label for="Sozialversicherungsnummer">Sozialversicherungsnummer: </label>
+        <input @bind="Sozialversicherungsnummer" type="text" id="Sozialversicherungsnummer" name="Sozialversicherungsnummer" pattern="[0-9]{4}" title="Sozialversicherungsnummer muss 4-stellig sein" required>
+        <br>
+        <button class="btn btn-warning" @onclick="@(async () => await InsertData(Vorname, Nachname, Geburtsdatum, Sozialversicherungsnummer))">Speichern</button>
+    </form>
+}
+
+
+@code {
+
+    List<ImpfModel> impfen;
+
+    private string Vorname;
+    private string Nachname;
+    private DateTime Geburtsdatum = DateTime.Today;
+    private string Sozialversicherungsnummer;
+
+    private string queryID;
+
+
+
+    private async Task InsertData(string Vorname, string Nachname, DateTime Geburtsdatum, string Sozialversicherungsnummer)
+    {
+            if (Sozialversicherungsnummer.Length != 4)
+            {
+            return;
+            }
+
+        string sql = "insert into person (per_Vname, per_Nname, per_GebDat, per_svnr) values (@per_Vname, @per_Nname, @per_GebDat, @per_svnr);";
+
+        await _data.SaveData(sql, new { per_Vname = Vorname, per_Nname = Nachname, per_GebDat = Geburtsdatum, per_svnr = Sozialversicherungsnummer }, _config.GetConnectionString("default"));
+        await LoadAllData();
+    }
+
+
+
+    private async Task LoadAllData()
+    {
+        string sql = "select * from person";
+
+        impfen = await _data.LoadData<ImpfModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = UriHelper.ToAbsoluteUri(UriHelper.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("Vorname", out var param))
+        {
+            queryID = param.First();
+        }
+
+        //await SearchData(queryID);
+        await LoadAllData();
+
+        //Updatemovie = movie;
+    }
+}

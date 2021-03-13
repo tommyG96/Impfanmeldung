@@ -1,0 +1,78 @@
+﻿@page "/schema"
+
+@using DataLibrary
+@using Microsoft.AspNetCore.WebUtilities
+@using BlazorServer.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration _config
+@inject NavigationManager UriHelper
+@inject IDataAccess _data
+
+
+<h3>Schemata</h3>
+
+
+@if (schemata == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <br />
+    <br />
+
+    <table>
+        <tr>
+            <th>Schemata</th>
+            <th>Auswählen</th>
+
+        </tr>
+        @foreach (var s in schemata)
+        {
+            <tr>
+                <td>
+                    @s.database_name
+                </td>
+                <td>
+
+                    <a class="btn btn-dark" href="@("/tabellen?Schema=" + s.database_name)">Auswählen</a>
+
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+@code {
+
+    List<SchemaModel> schemata;
+
+    private async Task LoadAllData()
+    {
+        string sql = "select schema_name as database_name from information_schema.schemata order by schema_name";
+
+        schemata = await _data.LoadData<SchemaModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAllData();
+    }
+}

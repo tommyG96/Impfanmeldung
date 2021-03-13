@@ -1,0 +1,89 @@
+﻿@page "/tabellen"
+
+@using DataLibrary
+@using Microsoft.AspNetCore.WebUtilities
+@using BlazorServer.Models
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration _config
+@inject NavigationManager UriHelper
+@inject IDataAccess _data
+
+
+<h3>Tabellen</h3>
+
+
+@if (tabellen == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
+    <br />
+    <ul>
+        <li>Schema: @querySchema</li>
+    </ul>
+    <br />
+    <table>
+        <tr>
+            <th>Tabellen</th>
+            <th>Auswählen</th>
+
+        </tr>
+        @foreach (var t in tabellen)
+        {
+            <tr>
+                <td>
+                    @t.table_name
+                </td>
+                <td>
+                    <a class="btn btn-dark" href="@("/struktur?Schema=" + querySchema + "&Tabelle=" + t.table_name)">Auswählen</a>
+
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+@code {
+
+    List<TabellenModel> tabellen;
+
+    private string querySchema;
+
+    private async Task LoadAllData(string schema)
+    {
+        string sql = "SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES where table_schema in (@table_schema)";
+
+        tabellen = await _data.LoadData<TabellenModel, dynamic>(sql, new { table_schema = schema }, _config.GetConnectionString("default"));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var uri = UriHelper.ToAbsoluteUri(UriHelper.Uri);
+
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("Schema", out var param))
+        {
+            querySchema = param.First();
+        }
+
+        await LoadAllData(querySchema);
+    }
+}
