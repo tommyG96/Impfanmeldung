@@ -1,4 +1,8 @@
-﻿@page "/schema"
+﻿@*
+    Diese Seite zeigt alle vorhandenen Schemata in der Datenbank an, hier kann man dann ein Schema auswählen um die darin befindlichen Tabellen einzusehen
+*@
+
+@page "/schema"
 
 @using DataLibrary
 @using Microsoft.AspNetCore.WebUtilities
@@ -64,6 +68,9 @@ else
 
     List<SchemaModel> schemata;
 
+    @*
+        In LoadAllData wird die SQL Query eingetragen und aufgerufen um alle gewünschten Einträge einer Tabelle auszugeben
+    *@
     private async Task LoadAllData()
     {
         string sql = "select schema_name as database_name from information_schema.schemata order by schema_name";
@@ -71,6 +78,10 @@ else
         schemata = await _data.LoadData<SchemaModel, dynamic>(sql, new { }, _config.GetConnectionString("default"));
     }
 
+    @*
+        OnInitialize wird aufgerufen, sobald zu dieser Seite hin navigiert wird
+        und ruft LoadAllData auf, damit Daten zur Anzeige geladen werden
+    *@
     protected override async Task OnInitializedAsync()
     {
         await LoadAllData();

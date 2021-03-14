@@ -1,4 +1,8 @@
-﻿@page "/struktur"
+﻿@*
+    Diese Seite zeigt alle Detailinformationen der ausgewählten Tabellen in der Datenbank an
+*@
+
+@page "/struktur"
 
 @using DataLibrary
 @using Microsoft.AspNetCore.WebUtilities
@@ -88,29 +92,29 @@ else
         </tr>
         @foreach (var f in fremdschlüssel)
         {
-    <tr>
-        <td>
-            @f.table_name
-        </td>
-        <td>
-            @f.column_name
-        </td>
-        <td>
-            @f.constraint_name
-        </td>
-        <td>
-            @f.referenced_table_name
-        </td>
-        <td>
-            @f.referenced_column_Name
-        </td>
-        <td>
-            @f.update_rule
-        </td>
-        <td>
-            @f.delete_rule
-        </td>
-    </tr>
+            <tr>
+                <td>
+                    @f.table_name
+                </td>
+                <td>
+                    @f.column_name
+                </td>
+                <td>
+                    @f.constraint_name
+                </td>
+                <td>
+                    @f.referenced_table_name
+                </td>
+                <td>
+                    @f.referenced_column_Name
+                </td>
+                <td>
+                    @f.update_rule
+                </td>
+                <td>
+                    @f.delete_rule
+                </td>
+            </tr>
         }
     </table>
 
@@ -121,12 +125,12 @@ else
     List<TabellenStrukturModel> strukturen;
     List<ForeignKeyConstraintModel> fremdschlüssel;
 
-
     private string querySchema;
     private string queryTabelle;
 
-
-
+    @*
+        In LoadAllData wird die SQL Query eingetragen und aufgerufen um alle gewünschten Einträge einer Tabelle auszugeben, die dem Schema und der Tabelle entsprechen
+    *@
     private async Task LoadAllData(string schema, string table)
     {
         string sql1 = "SELECT *" +
@@ -146,6 +150,11 @@ else
         fremdschlüssel = await _data.LoadData<ForeignKeyConstraintModel, dynamic>(sql2, new { table_schema = schema, table_name = table }, _config.GetConnectionString("default"));
     }
 
+    @*
+        OnInitialize wird aufgerufen, sobald zu dieser Seite hin navigiert wird
+        Es werden die Query Parameter ausgelesen (in der URL nach dem ? mehrere Query Parameter können mit & getrennt werden)
+        und ruft mit dem ausgelesenen QueryParameter LoadAllData auf, damit die entsprechenden Daten zur Anzeige geladen werden
+    *@
     protected override async Task OnInitializedAsync()
     {
 
@@ -159,8 +168,6 @@ else
         {
             queryTabelle = param.First();
         }
-
-
 
         await LoadAllData(querySchema, queryTabelle);
     }

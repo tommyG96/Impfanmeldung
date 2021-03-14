@@ -1,16 +1,12 @@
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BlazorServer
 {
+    /* Wenn man die Anwendung startet wird als allererstes 
+     * public static void Main aufgerufen. Diese nutzt Startup.cs um Konfigurationen vorzunehmen.
+     * (Standard/automatisiert bei der Projekterstellung erstellt)
+     * */
     public class Program
     {
         public static void Main(string[] args)

@@ -1,4 +1,8 @@
-﻿@page "/tabellen"
+﻿@*
+    Diese Seite zeigt alle vorhandenen Tabellen in der Datenbank an, hier kann man dann eine Tabelle auswählen um Detailinformationen über die gewählte Tabelle einzusehen
+*@
+
+@page "/tabellen"
 
 @using DataLibrary
 @using Microsoft.AspNetCore.WebUtilities
@@ -67,6 +71,9 @@ else
 
     private string querySchema;
 
+    @*
+        In LoadAllData wird die SQL Query eingetragen und aufgerufen um alle gewünschten Einträge einer Tabelle auszugeben, die dem Schema entsprechen
+    *@
     private async Task LoadAllData(string schema)
     {
         string sql = "SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES where table_schema in (@table_schema)";
@@ -74,6 +81,11 @@ else
         tabellen = await _data.LoadData<TabellenModel, dynamic>(sql, new { table_schema = schema }, _config.GetConnectionString("default"));
     }
 
+    @*
+        OnInitialize wird aufgerufen, sobald zu dieser Seite hin navigiert wird
+        Es werden die Query Parameter ausgelesen (in der URL nach dem ? mehrere Query Parameter können mit & getrennt werden)
+        und ruft mit dem ausgelesenen QueryParameter LoadAllData auf, damit die entsprechenden Daten zur Anzeige geladen werden
+    *@
     protected override async Task OnInitializedAsync()
     {
 
